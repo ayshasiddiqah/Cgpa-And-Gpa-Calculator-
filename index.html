@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>GPA & CGPA Calculator</title>
+
+<style>
+:root{
+    --bg:#f4f4f4;
+    --card:white;
+    --text:#222;
+    --primary:#4a90e2;
+}
+
+body{
+    font-family:Arial;
+    background:var(--bg);
+    color:var(--text);
+    transition:0.5s;
+    padding:20px;
+}
+
+.container{
+    max-width:700px;
+    margin:auto;
+    background:var(--card);
+    padding:25px;
+    border-radius:15px;
+    box-shadow:0 0 15px gray;
+}
+
+h1{
+    text-align:center;
+}
+
+input,select,button{
+    padding:10px;
+    margin:5px;
+    border-radius:8px;
+    border:1px solid gray;
+}
+
+button{
+    background:var(--primary);
+    color:white;
+    cursor:pointer;
+}
+
+.subject{
+    margin:10px 0;
+}
+
+.result{
+    background:#eee;
+    padding:15px;
+    margin-top:20px;
+    border-radius:10px;
+}
+
+.dark{
+    --bg:#111;
+    --card:#222;
+    --text:white;
+    --primary:#ff9800;
+}
+
+.neon{
+    --bg:#001;
+    --card:#101020;
+    --text:#00ffff;
+    --primary:#ff00ff;
+}
+
+</style>
+</head>
+
+
+<body>
+
+<div class="container">
+
+<h1>🎓 GPA & CGPA Calculator</h1>
+
+<button onclick="changeTheme('')">Light Theme</button>
+<button onclick="changeTheme('dark')">Dark Theme</button>
+<button onclick="changeTheme('neon')">Neon Theme</button>
+
+<br><br>
+
+<button onclick="playMusic()">🎵 Play Melody</button>
+<button onclick="stopMusic()">⏹ Stop Music</button>
+
+<audio id="music" loop>
+<source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3">
+</audio>
+
+
+<h2>Add Subjects</h2>
+
+<div id="subjects"></div>
+
+<button onclick="addSubject()">➕ Add Subject</button>
+
+<br><br>
+
+<button onclick="calculate()">Calculate GPA</button>
+
+<button onclick="window.print()">🖨 Print / Save PDF</button>
+
+
+<div class="result" id="result">
+Result will appear here
+</div>
+
+
+</div>
+
+
+
+<script>
+
+let subjects=[];
+
+
+function addSubject(){
+
+let div=document.createElement("div");
+
+div.className="subject";
+
+div.innerHTML=`
+
+Subject Name:
+<input type="text" class="name">
+
+Credit:
+<input type="number" class="credit" min="1">
+
+Grade:
+<select class="grade">
+
+<option value="10">O</option>
+<option value="9">A+</option>
+<option value="8">A</option>
+<option value="7">B+</option>
+<option value="6">B</option>
+<option value="5">C</option>
+<option value="0">F</option>
+
+</select>
+
+`;
+
+document.getElementById("subjects").appendChild(div);
+
+}
+
+
+
+function calculate(){
+
+let credits=document.querySelectorAll(".credit");
+let grades=document.querySelectorAll(".grade");
+
+let totalCredit=0;
+let totalPoint=0;
+
+
+for(let i=0;i<credits.length;i++){
+
+let c=Number(credits[i].value);
+let g=Number(grades[i].value);
+
+
+totalCredit+=c;
+totalPoint+=c*g;
+
+}
+
+
+let gpa=totalPoint/totalCredit;
+
+
+document.getElementById("result").innerHTML=`
+
+<h3>Academic Result</h3>
+
+Total Credits : ${totalCredit}<br>
+
+Total Grade Points : ${totalPoint}<br><br>
+
+<h2>GPA : ${gpa.toFixed(2)}</h2>
+
+
+<h3>CGPA Calculation</h3>
+
+Previous CGPA:
+<input id="oldcgpa" type="number">
+
+Previous Credits:
+<input id="oldcredit" type="number">
+
+<button onclick="cgpa()">Calculate CGPA</button>
+
+<div id="cgpaResult"></div>
+
+`;
+
+}
+
+
+
+function cgpa(){
+
+let old=document.getElementById("oldcgpa").value;
+
+let oldcredit=document.getElementById("oldcredit").value;
+
+let current=document.querySelector(".result h2").innerText.split(":")[1];
+
+
+let total=(old*oldcredit)+(current*10);
+
+let credits=Number(oldcredit)+10;
+
+
+document.getElementById("cgpaResult").innerHTML=
+
+"Final CGPA : "+(total/credits).toFixed(2);
+
+}
+
+
+
+function changeTheme(theme){
+
+document.body.className=theme;
+
+}
+
+
+
+function playMusic(){
+
+document.getElementById("music").play();
+
+}
+
+
+function stopMusic(){
+
+document.getElementById("music").pause();
+
+}
+
+
+</script>
+
+
+</body>
+</html>
