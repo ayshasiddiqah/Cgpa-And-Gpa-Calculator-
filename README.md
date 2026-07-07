@@ -1,1 +1,504 @@
-Cgpa-And-Gpa-Calculator
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GPA / CGPA — Academic Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root[data-theme="obsidian"]{
+    --bg:#15161B; --surface:#1D1F26; --surface2:#22242C; --text:#EDEAE1; --muted:#9A9FAE;
+    --accent:#C9A868; --accent2:#8C4A54; --rule:rgba(237,234,225,0.12); --stamp-text:#15161B;
+  }
+  :root[data-theme="bone"]{
+    --bg:#F6F3EC; --surface:#FFFFFF; --surface2:#EFEAE0; --text:#20211F; --muted:#7A7264;
+    --accent:#8A6A2F; --accent2:#6E2A34; --rule:rgba(32,33,31,0.10); --stamp-text:#F6F3EC;
+  }
+  :root[data-theme="emerald"]{
+    --bg:#0F211D; --surface:#152C26; --surface2:#11241F; --text:#E7F0EA; --muted:#8AA79B;
+    --accent:#CDB07A; --accent2:#4C7A6A; --rule:rgba(231,240,234,0.12); --stamp-text:#0F211D;
+  }
+  :root[data-theme="rosewood"]{
+    --bg:#241417; --surface:#2E1B1F; --surface2:#291920; --text:#F1E6E4; --muted:#B08D8D;
+    --accent:#D8B36A; --accent2:#A85C63; --rule:rgba(241,230,228,0.12); --stamp-text:#241417;
+  }
+
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;
+    transition:background .6s ease, color .6s ease;
+  }
+  .wrap{ max-width:880px; margin:0 auto; padding:56px 24px 70px; }
+
+  /* ---------- Header ---------- */
+  header{ margin-bottom:44px; }
+  h1{
+    font-family:'Fraunces',serif; font-weight:500; font-style:italic;
+    font-size:clamp(30px,5vw,44px); margin:0 0 8px; letter-spacing:-.01em;
+  }
+  h1 .accent-word{ font-style:normal; font-weight:600; color:var(--accent); }
+  header .rule{ height:1px; background:linear-gradient(90deg, var(--accent), transparent 70%); margin-top:20px; opacity:.6; }
+
+  .controls{ display:flex; gap:8px; flex-wrap:wrap; margin-top:22px; }
+  .ctrl-btn{
+    border:1px solid var(--rule); background:transparent; color:var(--muted);
+    font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.05em;
+    padding:9px 16px; border-radius:100px; cursor:pointer;
+    display:flex; align-items:center; gap:8px; transition:all .2s ease;
+  }
+  .ctrl-btn:hover{ border-color:var(--accent); color:var(--text); }
+  .swatch{ width:9px; height:9px; border-radius:50%; background:var(--accent); border:1px solid var(--rule); }
+  .note-dot{ width:7px; height:7px; border-radius:50%; background:var(--accent2); transition:background .2s;}
+  .note-dot.on{ background:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+  .ctrl-btn.primary{ background:var(--accent); color:var(--stamp-text); border-color:var(--accent); font-weight:600; }
+  .ctrl-btn.primary:hover{ filter:brightness(1.07); }
+
+  /* ---------- Section micro-labels (not headings) ---------- */
+  .tag{
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--accent); margin:0 0 14px; display:flex; align-items:center; gap:10px;
+  }
+  .tag::after{ content:""; flex:1; height:1px; background:var(--rule); }
+
+  section.panel{
+    background:var(--surface); border:1px solid var(--rule); border-radius:10px;
+    padding:28px; margin-bottom:22px;
+  }
+
+  table{ width:100%; border-collapse:collapse; }
+  thead th{
+    text-align:left; font-family:'JetBrains Mono',monospace; font-size:10.5px; text-transform:uppercase;
+    letter-spacing:.1em; color:var(--muted); font-weight:500; padding:0 8px 10px; border-bottom:1px solid var(--rule);
+  }
+  tbody td{ padding:10px 8px; border-bottom:1px solid var(--rule); }
+  tbody tr:last-child td{ border-bottom:none; }
+
+  input[type="text"], input[type="number"], select{
+    width:100%; background:var(--surface2); border:1px solid var(--rule); color:var(--text);
+    padding:10px 11px; border-radius:6px; font-family:'Inter',sans-serif; font-size:14px;
+    transition:border-color .15s;
+  }
+  input:focus, select:focus{ outline:none; border-color:var(--accent); }
+  .col-credits{ width:96px; } .col-grade{ width:130px; } .col-remove{ width:36px; text-align:center; }
+
+  .remove-btn{ background:none; border:none; color:var(--muted); font-size:16px; cursor:pointer; }
+  .remove-btn:hover{ color:var(--accent2); }
+
+  .row-actions{ display:flex; justify-content:space-between; align-items:center; margin-top:18px; gap:12px; flex-wrap:wrap; }
+  .add-btn{
+    background:none; border:1px dashed var(--rule); color:var(--muted); padding:9px 16px; border-radius:6px;
+    font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.03em; cursor:pointer; transition:all .15s;
+  }
+  .add-btn:hover{ border-color:var(--accent); color:var(--accent); }
+  .compute-btn{
+    background:var(--accent); color:var(--stamp-text); border:none; padding:11px 24px; border-radius:6px;
+    font-family:'JetBrains Mono',monospace; font-weight:600; font-size:12px; letter-spacing:.04em; cursor:pointer;
+  }
+  .compute-btn:hover{ filter:brightness(1.07); }
+
+  .cgpa-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:14px; margin-bottom:18px; }
+  .field label{
+    display:block; font-family:'JetBrains Mono',monospace; font-size:10.5px; text-transform:uppercase;
+    letter-spacing:.08em; color:var(--muted); margin-bottom:7px;
+  }
+
+  /* ---------- Ledger result card ---------- */
+  #resultsForPdf{ display:flex; flex-direction:column; gap:16px; }
+  .ledger{
+    background:var(--surface); border:1px solid var(--rule); border-radius:10px;
+    padding:32px; display:flex; justify-content:space-between; align-items:center; gap:24px; flex-wrap:wrap;
+    position:relative; opacity:0; transform:translateY(6px); animation:rise .6s ease forwards;
+  }
+  @keyframes rise{ to{ opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce){ .ledger{ animation:none; opacity:1; transform:none; } }
+
+  .ledger-label{
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:.14em;
+    color:var(--muted); margin:0 0 8px;
+  }
+  .ledger-value{ font-family:'Fraunces',serif; font-weight:600; font-size:54px; margin:0; line-height:1; }
+  .ledger-scale{ color:var(--muted); font-size:13px; margin-top:8px; }
+
+  .seal{
+    position:relative; width:104px; height:104px; border-radius:50%; flex-shrink:0;
+    border:1px solid var(--accent); display:flex; align-items:center; justify-content:center;
+    transform:rotate(-4deg);
+  }
+  .seal::before{
+    content:""; position:absolute; inset:6px; border:1px solid var(--accent); border-radius:50%; opacity:.55;
+  }
+  .seal-grade{ font-family:'Fraunces',serif; font-style:italic; font-weight:600; font-size:28px; color:var(--accent); }
+
+  footer.legend{
+    display:flex; justify-content:center; gap:18px; flex-wrap:wrap; margin-top:28px;
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--muted); letter-spacing:.03em;
+  }
+
+  @media (max-width:560px){
+    .col-credits{ width:72px; } .col-grade{ width:104px; }
+    .ledger{ flex-direction:column; text-align:center; }
+  }
+
+  @media print{
+    body{ background:#fff !important; color:#111 !important; }
+    .no-print{ display:none !important; }
+    section.panel{ display:none !important; }
+    .ledger{ border:1px solid #999; animation:none; opacity:1; transform:none; }
+    .ledger-value, .seal-grade{ color:#111 !important; }
+    .seal, .seal::before{ border-color:#111; }
+    .wrap{ padding:0; }
+  }
+</style>
+</head>
+<body data-theme="obsidian">
+<div class="wrap">
+
+  <header>
+    <h1>GPA <span class="accent-word">&amp;</span> CGPA</h1>
+    <div class="controls no-print">
+      <button class="ctrl-btn" id="themeBtn"><span class="swatch"></span><span id="themeLabel">Obsidian &amp; Gold</span></button>
+      <button class="ctrl-btn" id="musicBtn"><span class="note-dot" id="musicDot"></span><span id="musicLabel">Melody off</span></button>
+      <button class="ctrl-btn" id="printBtn">Print</button>
+      <button class="ctrl-btn primary" id="pdfBtn">Download PDF</button>
+    </div>
+    <div class="rule"></div>
+  </header>
+
+  <!-- GPA SECTION -->
+  <section class="panel">
+    <p class="tag">Term Courses</p>
+    <table>
+      <thead>
+        <tr><th>Course</th><th class="col-credits">Credits</th><th class="col-grade">Grade</th><th class="col-remove"></th></tr>
+      </thead>
+      <tbody id="courseRows"></tbody>
+    </table>
+    <div class="row-actions">
+      <button class="add-btn" id="addRow">+ Add course</button>
+      <button class="compute-btn" id="calcGpaBtn">Calculate GPA</button>
+    </div>
+  </section>
+
+  <!-- CGPA SECTION -->
+  <section class="panel">
+    <p class="tag">Cumulative Record</p>
+    <div class="cgpa-grid">
+      <div class="field">
+        <label for="prevCgpa">Previous CGPA</label>
+        <input type="number" id="prevCgpa" step="0.01" min="0" max="4" placeholder="e.g. 3.42">
+      </div>
+      <div class="field">
+        <label for="prevCredits">Previous credits</label>
+        <input type="number" id="prevCredits" step="0.5" min="0" placeholder="e.g. 60">
+      </div>
+      <div class="field">
+        <label for="curCgpaGpa">This term's GPA</label>
+        <input type="number" id="curCgpaGpa" step="0.01" min="0" max="4" placeholder="auto-filled">
+      </div>
+      <div class="field">
+        <label for="curCgpaCredits">This term's credits</label>
+        <input type="number" id="curCgpaCredits" step="0.5" min="0" placeholder="auto-filled">
+      </div>
+    </div>
+    <div class="row-actions">
+      <span></span>
+      <button class="compute-btn" id="calcCgpaBtn">Calculate CGPA</button>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <div id="resultsForPdf">
+    <div class="ledger" id="gpaLedger">
+      <div>
+        <p class="ledger-label">Term GPA</p>
+        <p class="ledger-value" id="gpaValue">—</p>
+        <p class="ledger-scale" id="gpaCredits">No courses calculated yet</p>
+      </div>
+      <div class="seal"><div class="seal-grade" id="gpaStampGrade">–</div></div>
+    </div>
+
+    <div class="ledger" id="cgpaLedger">
+      <div>
+        <p class="ledger-label">Cumulative GPA</p>
+        <p class="ledger-value" id="cgpaValue">—</p>
+        <p class="ledger-scale" id="cgpaCredits">Fill in the fields above</p>
+      </div>
+      <div class="seal"><div class="seal-grade" id="cgpaStampGrade">–</div></div>
+    </div>
+  </div>
+
+  <footer class="legend no-print">
+    <span>A+/A · 4.0</span><span>A- · 3.7</span><span>B+ · 3.3</span><span>B · 3.0</span><span>B- · 2.7</span><span>C+ · 2.3</span><span>C · 2.0</span><span>F · 0.0</span>
+  </footer>
+</div>
+
+<script>
+const GRADE_POINTS = {
+  "A+":4.0,"A":4.0,"A-":3.7,"B+":3.3,"B":3.0,"B-":2.7,
+  "C+":2.3,"C":2.0,"C-":1.7,"D+":1.3,"D":1.0,"F":0.0
+};
+
+function letterFromGpa(gpa){
+  if(gpa===null || isNaN(gpa)) return "–";
+  if(gpa>=3.85) return "A+";
+  if(gpa>=3.5) return "A";
+  if(gpa>=3.15) return "A-";
+  if(gpa>=2.85) return "B+";
+  if(gpa>=2.5) return "B";
+  if(gpa>=2.15) return "B-";
+  if(gpa>=1.85) return "C+";
+  if(gpa>=1.5) return "C";
+  if(gpa>=1.15) return "C-";
+  if(gpa>=0.85) return "D+";
+  if(gpa>=0.5) return "D";
+  return "F";
+}
+
+/* ---------- Course rows ---------- */
+const rowsBody = document.getElementById('courseRows');
+let rowCount = 0;
+
+function makeRow(name="", credits="", grade="A"){
+  rowCount++;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" class="course-name" placeholder="Course ${rowCount}" value="${name}"></td>
+    <td class="col-credits"><input type="number" class="course-credits" min="0" step="0.5" value="${credits}" placeholder="3"></td>
+    <td class="col-grade"><select class="course-grade"></select></td>
+    <td class="col-remove"><button class="remove-btn" title="Remove course">✕</button></td>
+  `;
+  const select = tr.querySelector('.course-grade');
+  Object.keys(GRADE_POINTS).forEach(g=>{
+    const opt = document.createElement('option');
+    opt.value = g; opt.textContent = g;
+    if(g===grade) opt.selected = true;
+    select.appendChild(opt);
+  });
+  tr.querySelector('.remove-btn').addEventListener('click', ()=> tr.remove());
+  rowsBody.appendChild(tr);
+}
+document.getElementById('addRow').addEventListener('click', ()=>makeRow());
+makeRow("", 3); makeRow("", 3); makeRow("", 3);
+
+function calcGpa(){
+  const rows = rowsBody.querySelectorAll('tr');
+  let totalPoints = 0, totalCredits = 0, counted = 0;
+  rows.forEach(r=>{
+    const credits = parseFloat(r.querySelector('.course-credits').value);
+    const grade = r.querySelector('.course-grade').value;
+    if(!isNaN(credits) && credits > 0){
+      totalPoints += credits * GRADE_POINTS[grade];
+      totalCredits += credits;
+      counted++;
+    }
+  });
+  const gpaVal = document.getElementById('gpaValue');
+  const gpaCreditsEl = document.getElementById('gpaCredits');
+  const stamp = document.getElementById('gpaStampGrade');
+
+  if(counted === 0 || totalCredits === 0){
+    gpaVal.textContent = "—";
+    gpaCreditsEl.textContent = "Add at least one course with credit hours";
+    stamp.textContent = "–";
+    return;
+  }
+  const gpa = totalPoints / totalCredits;
+  gpaVal.textContent = gpa.toFixed(2);
+  gpaCreditsEl.textContent = `${counted} course${counted>1?'s':''} · ${totalCredits} credit${totalCredits!=1?'s':''}`;
+  stamp.textContent = letterFromGpa(gpa);
+
+  document.getElementById('curCgpaGpa').value = gpa.toFixed(2);
+  document.getElementById('curCgpaCredits').value = totalCredits;
+}
+document.getElementById('calcGpaBtn').addEventListener('click', calcGpa);
+
+/* ---------- CGPA ---------- */
+function calcCgpa(){
+  const prevCgpa = parseFloat(document.getElementById('prevCgpa').value);
+  const prevCredits = parseFloat(document.getElementById('prevCredits').value);
+  const curGpa = parseFloat(document.getElementById('curCgpaGpa').value);
+  const curCredits = parseFloat(document.getElementById('curCgpaCredits').value);
+
+  const val = document.getElementById('cgpaValue');
+  const info = document.getElementById('cgpaCredits');
+  const stamp = document.getElementById('cgpaStampGrade');
+
+  const hasPrev = !isNaN(prevCgpa) && !isNaN(prevCredits) && prevCredits > 0;
+  const hasCur = !isNaN(curGpa) && !isNaN(curCredits) && curCredits > 0;
+
+  if(!hasPrev && !hasCur){
+    val.textContent = "—";
+    info.textContent = "Fill in the fields above";
+    stamp.textContent = "–";
+    return;
+  }
+  const prevPoints = hasPrev ? prevCgpa * prevCredits : 0;
+  const curPoints = hasCur ? curGpa * curCredits : 0;
+  const totalCredits = (hasPrev ? prevCredits : 0) + (hasCur ? curCredits : 0);
+  const cgpa = (prevPoints + curPoints) / totalCredits;
+
+  val.textContent = cgpa.toFixed(2);
+  info.textContent = `Across ${totalCredits} total credit${totalCredits!=1?'s':''}`;
+  stamp.textContent = letterFromGpa(cgpa);
+}
+document.getElementById('calcCgpaBtn').addEventListener('click', calcCgpa);
+
+/* ---------- Theme switching ---------- */
+const themes = [
+  {key:"obsidian", label:"Obsidian & Gold"},
+  {key:"bone", label:"Bone & Gold"},
+  {key:"emerald", label:"Emerald Dusk"},
+  {key:"rosewood", label:"Rosewood"}
+];
+let themeIdx = 0;
+const root = document.documentElement;
+const themeLabel = document.getElementById('themeLabel');
+document.getElementById('themeBtn').addEventListener('click', ()=>{
+  themeIdx = (themeIdx + 1) % themes.length;
+  root.setAttribute('data-theme', themes[themeIdx].key);
+  themeLabel.textContent = themes[themeIdx].label;
+});
+
+/* ---------- Melodic ambient music (fully synthesized, no external files) ---------- */
+let audioCtx = null;
+let musicOn = false;
+let schedulerTimer = null;
+let nextNoteTime = 0;
+let stepIndex = 0;
+const tempo = 84; // BPM
+const stepDur = 60 / tempo / 2; // eighth notes
+
+// gentle pentatonic melody (C major pentatonic across two octaves), 0 = rest
+const melody = [
+  261.63, 329.63, 392.00, 0, 329.63, 440.00, 392.00, 0,
+  293.66, 392.00, 440.00, 0, 523.25, 440.00, 392.00, 0
+];
+
+const musicBtn = document.getElementById('musicBtn');
+const musicDot = document.getElementById('musicDot');
+const musicLabel = document.getElementById('musicLabel');
+
+let master, delay, feedback, padGain;
+
+function initAudioGraph(){
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  master = audioCtx.createGain();
+  master.gain.value = 0.35;
+  master.connect(audioCtx.destination);
+
+  const toneFilter = audioCtx.createBiquadFilter();
+  toneFilter.type = "lowpass";
+  toneFilter.frequency.value = 2200;
+  toneFilter.connect(master);
+
+  delay = audioCtx.createDelay();
+  delay.delayTime.value = 0.34;
+  feedback = audioCtx.createGain();
+  feedback.gain.value = 0.28;
+  delay.connect(feedback);
+  feedback.connect(delay);
+  delay.connect(toneFilter);
+
+  const dry = audioCtx.createGain();
+  dry.gain.value = 0.9;
+  dry.connect(toneFilter);
+
+  // soft sustained pad underneath
+  padGain = audioCtx.createGain();
+  padGain.gain.value = 0.035;
+  padGain.connect(toneFilter);
+  [130.81, 196.00].forEach(f=>{
+    const o = audioCtx.createOscillator();
+    o.type = "sine"; o.frequency.value = f;
+    o.connect(padGain);
+    o.start();
+  });
+
+  return {dry};
+}
+
+function playNote(freq, time, dest){
+  if(!freq) return;
+  const o = audioCtx.createOscillator();
+  o.type = "triangle";
+  o.frequency.value = freq;
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.0001, time);
+  g.gain.exponentialRampToValueAtTime(0.22, time + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, time + stepDur * 1.8);
+  o.connect(g);
+  g.connect(dest);
+  g.connect(delay);
+  o.start(time);
+  o.stop(time + stepDur * 2);
+}
+
+let dryNode;
+function scheduler(){
+  while(nextNoteTime < audioCtx.currentTime + 0.15){
+    playNote(melody[stepIndex], nextNoteTime, dryNode);
+    nextNoteTime += stepDur;
+    stepIndex = (stepIndex + 1) % melody.length;
+  }
+  schedulerTimer = setTimeout(scheduler, 30);
+}
+
+function startMusic(){
+  const graph = initAudioGraph();
+  dryNode = graph.dry;
+  nextNoteTime = audioCtx.currentTime + 0.1;
+  stepIndex = 0;
+  scheduler();
+}
+
+function stopMusic(){
+  clearTimeout(schedulerTimer);
+  if(audioCtx){ audioCtx.close(); audioCtx = null; }
+}
+
+musicBtn.addEventListener('click', ()=>{
+  musicOn = !musicOn;
+  if(musicOn){
+    startMusic();
+    musicDot.classList.add('on');
+    musicLabel.textContent = "Melody on";
+  } else {
+    stopMusic();
+    musicDot.classList.remove('on');
+    musicLabel.textContent = "Melody off";
+  }
+});
+
+/* ---------- Print & PDF ---------- */
+document.getElementById('printBtn').addEventListener('click', ()=> window.print());
+
+document.getElementById('pdfBtn').addEventListener('click', ()=>{
+  const target = document.getElementById('resultsForPdf');
+  const btn = document.getElementById('pdfBtn');
+  const originalText = btn.textContent;
+  btn.textContent = "Preparing…";
+
+  html2canvas(target, { backgroundColor: getComputedStyle(document.body).backgroundColor, scale: 2 }).then(canvas=>{
+    const imgData = canvas.toDataURL('image/png');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const margin = 40;
+    const imgWidth = pageWidth - margin * 2;
+    const imgHeight = canvas.height * (imgWidth / canvas.width);
+
+    pdf.setFont("times", "italic");
+    pdf.setFontSize(20);
+    pdf.text("GPA & CGPA Report", margin, 50);
+    pdf.setFont("courier", "normal");
+    pdf.setFontSize(9);
+    pdf.text(new Date().toLocaleDateString(), margin, 66);
+
+    pdf.addImage(imgData, 'PNG', margin, 84, imgWidth, imgHeight);
+    pdf.save('gpa-cgpa-report.pdf');
+    btn.text
